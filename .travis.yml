@@ -1,2 +1,9 @@
-language: shell
-script: ./build.sh
+language: java
+sudo: false
+before_install:
+  - nvm install 8
+  - npm i -g yarn
+before_script:
+  - cd src/jsMain && yarn install
+script:
+  - ./gradlew jvmTest jsTest bootJar
