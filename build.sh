@@ -3,8 +3,8 @@
 set -eux
 export PATH=.:$PATH
 
-curl -sL https://deb.nodesource.com/setup_8.x | bash -
-apt-get update && apt-get install -y nodejs
-npm i -g yarn
+curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
+sudo apt-get update && sudo apt-get install -y nodejs
+sudo npm i -g yarn
 (cd src/jsMain && yarn install)
 ./gradlew jvmTest jsTest bootJar
