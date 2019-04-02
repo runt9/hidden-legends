@@ -1,2 +1,2 @@
-language: java
+language: shell
 script: ./build.sh
