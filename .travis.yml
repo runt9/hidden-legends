@@ -3,4 +3,4 @@ sudo: false
 before_install:
   - nvm install 8
   - npm i -g yarn
-  - cd src/jsMain && yarn install
+  - (cd src/jsMain && yarn install)
