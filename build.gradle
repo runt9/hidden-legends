@@ -1,0 +1,208 @@
+buildscript {
+    ext {
+        kotlinVersion = "1.3.21"
+        kotlinxCoroutinesVersion = "1.0.1"
+        springBootVersion = "2.1.1.RELEASE"
+        fakerVersion = "0.16"
+        embeddedPostgresVersion = "0.12.6"
+        kotlinReactVersion = "16.6.0-pre.62-kotlin-1.3.0"
+        kotlinReactRouterVersion = "4.3.1-pre.62-kotlin-1.3.0"
+        kotlinCssVersion = "1.0.0-pre.62-kotlin-1.3.0"
+        kotlinxHtmlVersion = "0.6.11"
+        kotlinxSerializationVersion = "0.9.1"
+        gradleVersionPluginVersion = "0.20.0"
+        kotlinMomentVersion = "2.24.0-pre.1-kotlin-1.3.21"
+
+        uiDir = "./src/jsMain"
+        uiBuild = "$uiDir/build/web"
+    }
+
+    repositories {
+        jcenter()
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
+
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-serialization:${kotlinVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlinVersion}")
+        classpath "org.jetbrains.kotlin:kotlin-noarg:${kotlinVersion}"
+        classpath("com.github.ben-manes:gradle-versions-plugin:${gradleVersionPluginVersion}")
+    }
+}
+
+apply plugin: "org.jetbrains.kotlin.multiplatform"
+apply plugin: 'kotlinx-serialization'
+apply plugin: "java"
+apply plugin: "kotlin-dce-js"
+apply plugin: "kotlin-spring"
+apply plugin: "kotlin-jpa"
+apply plugin: "kotlin-kapt"
+apply plugin: "org.springframework.boot"
+apply plugin: "io.spring.dependency-management"
+apply plugin: "com.github.ben-manes.versions"
+
+group = "com.runt9"
+version = "0.0.1"
+sourceCompatibility = 1.8
+
+repositories {
+    jcenter()
+    maven { url "https://dl.bintray.com/kotlin/kotlinx.html" }
+    maven { url "https://dl.bintray.com/kotlin/kotlinx" }
+    maven { url "https://kotlin.bintray.com/kotlin-js-wrappers" }
+    maven { url "https://dl.bintray.com/kotlinspain/kotlin-js-wrappers" }
+    maven { url 'https://plugins.gradle.org/m2/' }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") {
+            bomProperty("kotlin.version", "${kotlinVersion}")
+        }
+    }
+}
+
+kotlin {
+    targets {
+        fromPreset(presets.jvm, "jvm") {
+            compilations.all {
+                tasks[compileKotlinTaskName].kotlinOptions {
+                    jvmTarget = "1.8"
+                    freeCompilerArgs = ["-Xjsr305=strict"]
+                }
+            }
+        }
+
+        fromPreset(presets.js, "js") {
+            compilations.all {
+                tasks[compileKotlinTaskName].kotlinOptions {
+                    sourceMap = true
+                    sourceMapEmbedSources = "always"
+                    moduleKind = "commonjs"
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
+                implementation("org.jetbrains.kotlin:kotlin-reflect")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:${kotlinxSerializationVersion}")
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-test-common")
+                implementation("org.jetbrains.kotlin:kotlin-test-annotations-common")
+            }
+        }
+
+        jvmMain {
+            dependsOn commonMain
+
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:${kotlinxSerializationVersion}")
+                implementation("org.springframework.boot:spring-boot-starter-web")
+                implementation("org.springframework.boot:spring-boot-starter-security")
+                implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+                implementation("org.springframework.boot:spring-boot-starter-mail")
+                implementation("org.springframework.boot:spring-boot-starter-jetty")
+                implementation("org.jetbrains.kotlin:kotlin-reflect")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${kotlinxCoroutinesVersion}")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+                compileOnly("org.springframework.boot:spring-boot-configuration-processor")
+
+                implementation("com.opentable.components:otj-pg-embedded:${embeddedPostgresVersion}")
+                implementation("org.flywaydb:flyway-core")
+
+                runtimeOnly("org.springframework.boot:spring-boot-devtools")
+            }
+        }
+
+        jvmTest {
+            dependsOn commonTest
+
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-test")
+                implementation("org.jetbrains.kotlin:kotlin-test-junit")
+                implementation("org.springframework.boot:spring-boot-starter-test")
+                implementation("org.springframework.security:spring-security-test")
+                implementation("com.github.javafaker:javafaker:${fakerVersion}")
+            }
+        }
+
+        jsMain {
+            dependsOn commonMain
+
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-stdlib-js")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:${kotlinxSerializationVersion}")
+                implementation("org.jetbrains:kotlin-react:${kotlinReactVersion}")
+                implementation("org.jetbrains:kotlin-react-dom:${kotlinReactVersion}")
+                implementation("org.jetbrains:kotlin-react-router-dom:${kotlinReactRouterVersion}")
+                implementation("org.jetbrains:kotlin-styled:${kotlinCssVersion}")
+                implementation("org.jetbrains.kotlinx:kotlinx-html-js:${kotlinxHtmlVersion}")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:${kotlinxCoroutinesVersion}")
+                implementation("io.kotlinspain:kotlin-moment:${kotlinMomentVersion}")
+            }
+        }
+
+        jsTest {
+            dependsOn commonTest
+
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-test-js")
+            }
+        }
+    }
+}
+
+jvmTest {
+    testLogging.showStandardStreams = true
+    testLogging.exceptionFormat = "full"
+}
+
+dependencies {
+    kapt("org.springframework.boot:spring-boot-configuration-processor")
+}
+
+task cleanFrontend(type: Exec) {
+    workingDir "$uiDir"
+    commandLine "./node_modules/.bin/yarn", "clean"
+}
+
+task compileFrontend(type: Exec) {
+    dependsOn runDceJsKotlin
+
+    workingDir "$uiDir"
+    commandLine "./node_modules/.bin/yarn", "build"
+}
+
+clean.dependsOn cleanFrontend
+
+springBoot {
+    mainClassName = 'com.runt9.hiddenLegends.HLApplication'
+}
+
+bootRun {
+    args = ["--spring.profiles.active=dev"]
+    classpath compileKotlinJvm.outputs, jvmProcessResources.outputs, configurations.jvmRuntimeClasspath, configurations.jvmMainRuntimeOnly
+}
+
+bootJar {
+    dependsOn compileFrontend
+    dependsOn jvmJar
+
+    classpath compileKotlinJvm.outputs, jvmProcessResources.outputs, configurations.jvmRuntimeClasspath, configurations.jvmMainRuntimeOnly
+
+    bootInf {
+        from("$uiBuild")
+        into("classes/static")
+    }
+}

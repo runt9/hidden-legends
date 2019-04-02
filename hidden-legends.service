@@ -1,0 +1,14 @@
+[Unit]
+Description=Hidden Legends
+
+[Service]
+Type=idle
+User=hiddenLegends
+WorkingDirectory=/usr/local/hiddenLegends
+ExecStart=/usr/local/hiddenLegends/startHiddenLegends.sh
+TimeoutStopSec=30
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+.gradle
+/build/
+/target/
+!gradle/wrapper/gradle-wrapper.jar
+/hidden-legends.jar
+buildSrc/
+
+.idea
+*.iws
+*.ipr
+/out/
+local.properties
+*.hprof

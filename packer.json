@@ -1,0 +1,67 @@
+{
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "us-east-1",
+      "spot_price": "auto",
+      "spot_price_auto_product": "Linux/UNIX (Amazon VPC)",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "ubuntu/images/*ubuntu-bionic-18.04-amd64-server-*",
+          "root-device-type": "ebs"
+        },
+        "most_recent": true,
+        "owners": [""]
+      },
+      "instance_type": "t3.medium",
+      "ssh_username": "ubuntu",
+      "ami_name": "hidden-legends-{{ user `hidden-legends-version` }}",
+      "force_deregister": true
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./hidden-legends.service",
+      "destination": "/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "./startHiddenLegends.sh",
+      "destination": "/tmp/"
+    },
+    {
+      "type": "file",
+      "source": "{{ user `hidden-legends-jar-file` }}",
+      "destination": "/tmp/hidden-legends.jar"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "echo 'Waiting 180 seconds for cloud-init to update /etc/apt/sources.list'",
+        "timeout 180 /bin/bash -c 'until stat /var/lib/cloud/instance/boot-finished 2>/dev/null; do echo waiting ...; sleep 1; done'",
+        "echo 'Finished updating apt sources'",
+        "echo 'Waiting for apt to finish'",
+        "timeout 180 /bin/bash -c 'while [ $(systemctl show -p SubState apt-daily-upgrade.timer) == \"SubState=running\" ]; do echo waiting ...; sleep 1; done'",
+        "echo 'Finished waiting for apt to finish'",
+        "sudo apt-get update",
+        "sudo apt-mark hold grub-common grub-pc grub-pc-bin grub2-common grub-legacy-ec2",
+        "sudo ucf --purge /boot/grub/menu.lst",
+        "sudo UCF_FORCE_CONFFNEW=YES apt-get dist-upgrade -y",
+        "sudo apt-get install -y openjdk-8-jdk openjdk-8-jre-headless",
+        "sudo mv -v /tmp/hidden-legends.service /etc/systemd/system/",
+        "sudo mkdir -pv /usr/local/hiddenLegends/",
+        "sudo mv -v /tmp/hidden-legends.jar /usr/local/hiddenLegends/",
+        "sudo mv -v /tmp/startHiddenLegends.sh /usr/local/hiddenLegends/",
+        "sudo chmod +x /usr/local/hiddenLegends/startHiddenLegends.sh",
+        "sudo useradd -r -s /bin/nologin hiddenLegends",
+        "sudo chown -R hiddenLegends:hiddenLegends /usr/local/hiddenLegends/",
+        "sudo setcap cap_net_bind_service=+ep $(readlink --canonicalize $(which java))",
+        "sudo systemctl daemon-reload",
+        "sudo systemctl enable hidden-legends",
+        "sudo systemctl start hidden-legends"
+      ]
+    }
+  ]
+}
